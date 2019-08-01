@@ -16,7 +16,7 @@ type Indexer struct {
 	}
 	addCacheLock struct {
 		sync.RWMutex
-		addCachePointer int
+		addCachePointer uint32
 		addCache        types.DocumentsIndex
 	}
 

@@ -2,15 +2,15 @@ package types
 
 type DocumentIndexData struct {
 	//文章识别符
-	PostId int32
+	PostId uint32
 	//标题
 	Title string
 	//文档全文（必须是UTF-8格式），用于生成待索引的关键词
 	Content string
 	//创建时间
-	CreateTime int64
+	CreateTime uint32
 	//更新时间
-	UpdateTime int64
+	UpdateTime uint32
 }
 
 type DocumentIndex struct {

@@ -34,32 +34,40 @@ type Engine struct {
 }
 
 func (engine *Engine) Init(options EngineInitOptions) {
+	// 将线程数设置为CPU数
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	// 初始化初始参数
 	if engine.initialized {
 		log.Fatal("请勿重复初始化引擎")
 	}
+	options.Init()
 	engine.initOptions = options
 	engine.initialized = true
-
-	// 将线程数设置为CPU数
-	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	// 初始化分词器通道
 	engine.segmenterChannel = make(
 		chan SegmenterRequest, options.NumSegmenterThreads)
 
+	// 启动分词器
+	for iThread := 0; iThread < options.NumSegmenterThreads; iThread++ {
+		go engine.SegmenterWorker()
+		fmt.Println("SegmenterWorker start")
+	}
+
 	// 初始化索引器通道
 	engine.indexerAddDocChannels = make(
 		[]chan IndexerAddDocumentRequest, options.NumShards)
+
 	// 初始化索引器
 	for shard := 0; shard < options.NumShards; shard++ {
 		engine.indexers = append(engine.indexers, core.Indexer{})
 		engine.indexers[shard].Init(*options.IndexerInitOptions)
 	}
 
-	// 启动分词器
-	for iThread := 0; iThread < options.NumSegmenterThreads; iThread++ {
-		go engine.SegmenterWorker()
+	// 启动索引器
+	for shard := 0; shard < options.NumShards; shard++ {
+		go engine.indexerAddDocumentWorker(shard)
+		fmt.Println("indexerAddDocumentWorker start")
 	}
 }
 
@@ -82,6 +90,7 @@ func (engine *Engine) internalIndexDocument(docId uint32, data types.DocumentInd
 	if !engine.initialized {
 		log.Fatal("必须先初始化引擎")
 	}
+	fmt.Println("internalIndexDocument", docId, data)
 	hash := murmur.Murmur3([]byte(fmt.Sprint("%d %s", docId, data.Content)))
 	engine.segmenterChannel <- SegmenterRequest{
 		DocId: docId, Hash: hash, Data: data, ForceUpdate: forceUpdate}

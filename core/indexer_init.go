@@ -12,7 +12,7 @@ type IndexerInitOptions struct {
 	IndexType uint32
 
 	// 待插入索引表文档 CACHE SIZE
-	DocCacheSize int
+	DocCacheSize uint32
 }
 
 func (options *IndexerInitOptions) Init() {

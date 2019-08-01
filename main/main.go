@@ -18,7 +18,7 @@ func main() {
 
 	// 将文档加入索引，docId 从1开始
 	searcher.IndexDocument(1, types.DocumentIndexData{PostId: 12321, Title: "标题", Content: "文章正文",
-		CreateTime: 1520000000, UpdateTime: 1520000001}, false)
+		CreateTime: 152000000, UpdateTime: 152000001}, false)
 
 	// 等待索引刷新完毕
 	searcher.FlushIndex()

@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"fmt"
 	"octopus/types"
 	"github.com/yanyiwu/gojieba"
 )
@@ -15,6 +16,7 @@ type SegmenterRequest struct {
 func (engine *Engine) SegmenterWorker() {
 	for {
 		request := <-engine.segmenterChannel
+		fmt.Println("SegmenterWorker read data from segmenterChannel", request.DocId, request.Data)
 		if request.DocId == 0 {
 			if request.ForceUpdate {
 				for i := 0; i < engine.initOptions.NumShards; i++ {
@@ -27,8 +29,8 @@ func (engine *Engine) SegmenterWorker() {
 		shard := engine.getShard(request.Hash)
 		tokensMap := make(map[string][]float32)
 		numTokens := 0
+		// 当文档正文不为空时, 从内容分词中得到关键词
 		if request.Data.Content != "" {
-			// 当文档正文不为空时, 从内容分词中得到关键词
 			segments := gojieba.NewJieba().ExtractWithWeight(request.Data.Content, 1000)
 			for _, segment := range segments {
 				token := segment.Word

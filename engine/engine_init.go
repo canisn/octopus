@@ -3,6 +3,17 @@ package engine
 import (
 	"octopus/core"
 	"octopus/types"
+	"runtime"
+)
+
+var (
+	// EngineInitOptions的默认值
+	defaultNumSegmenterThreads       = runtime.NumCPU()
+	defaultNumShards                 = 2
+	defaultIndexerBufferLength       = runtime.NumCPU()
+	defaultNumIndexerThreadsPerShard = runtime.NumCPU()
+	defaultRankerBufferLength        = runtime.NumCPU()
+	defaultNumRankerThreadsPerShard  = runtime.NumCPU()
 )
 
 type EngineInitOptions struct {
@@ -13,16 +24,16 @@ type EngineInitOptions struct {
 	NumShards int
 
 	// 索引器的信道缓冲长度
-	IndexerBufferLength uint32
+	IndexerBufferLength int
 
 	// 索引器每个shard分配的线程数
-	NumIndexerThreadsPerShard uint32
+	NumIndexerThreadsPerShard int
 
 	// 排序器的信道缓冲长度
-	RankerBufferLength uint32
+	RankerBufferLength int
 
 	// 排序器每个shard分配的线程数
-	NumRankerThreadsPerShard uint32
+	NumRankerThreadsPerShard int
 
 	// 索引器初始化选项
 	IndexerInitOptions *core.IndexerInitOptions
@@ -34,4 +45,33 @@ type EngineInitOptions struct {
 	UsePersistentStorage    bool
 	PersistentStorageFolder string
 	PersistentStorageShards uint32
+}
+
+// 初始化EngineInitOptions，当用户未设定某个选项的值时用默认值取代
+func (options *EngineInitOptions) Init() {
+
+	if options.NumSegmenterThreads == 0 {
+		options.NumSegmenterThreads = defaultNumSegmenterThreads
+	}
+
+	if options.NumShards == 0 {
+		options.NumShards = defaultNumShards
+	}
+
+	if options.IndexerBufferLength == 0 {
+		options.IndexerBufferLength = defaultIndexerBufferLength
+	}
+
+	if options.NumIndexerThreadsPerShard == 0 {
+		options.NumIndexerThreadsPerShard = defaultNumIndexerThreadsPerShard
+	}
+
+	if options.RankerBufferLength == 0 {
+		options.RankerBufferLength = defaultRankerBufferLength
+	}
+
+	if options.NumRankerThreadsPerShard == 0 {
+		options.NumRankerThreadsPerShard = defaultNumRankerThreadsPerShard
+	}
+
 }
