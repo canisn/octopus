@@ -9,7 +9,7 @@ const (
 // 初始化索引器选项
 type IndexerInitOptions struct {
 	// 索引表的类型，见上面的常数
-	IndexType int
+	IndexType uint32
 
 	// 待插入索引表文档 CACHE SIZE
 	DocCacheSize int

@@ -5,7 +5,6 @@ import (
 	"octopus/types"
 	"sort"
 	"sync"
-	"xclib/src/github.com/spf13/cast"
 )
 
 type Indexer struct {
@@ -25,19 +24,19 @@ type Indexer struct {
 	initialized bool
 
 	// 这实际上是总文档数的一个近似
-	numDocuments int32
+	numDocuments uint32
 
 	// 所有被索引文本的总关键词数
 	totalTokenLength float32
 
 	// 每个文档的关键词长度
-	docTokenLengths map[int32]float32
+	docTokenLengths map[uint32]float32
 }
 
 // 反向索引表的一行，收集了一个搜索键出现的所有文档，按照DocId从小到大排序。
 type KeywordIndices struct {
 	// 下面的切片是否为空，取决于初始化时IndexType的值
-	docIds []int32 // 全部类型都有
+	docIds []uint32 // 全部类型都有
 	weight []float32
 	//frequencies []float32 // IndexType == FrequenciesIndex
 	//locations   [][]int   // IndexType == LocationsIndex
@@ -54,17 +53,17 @@ func (indexer *Indexer) Init(options IndexerInitOptions) {
 
 	indexer.tableLock.table = make(map[string]*KeywordIndices)
 	indexer.addCacheLock.addCache = make([]*types.DocumentIndex, indexer.initOptions.DocCacheSize)
-	indexer.docTokenLengths = make(map[int32]float32)
+	indexer.docTokenLengths = make(map[uint32]float32)
 }
 
 // 从KeywordIndices中得到第i个文档的DocId
-func (indexer *Indexer) getDocId(ti *KeywordIndices, i int32) int32 {
+func (indexer *Indexer) getDocId(ti *KeywordIndices, i uint32) uint32 {
 	return ti.docIds[i]
 }
 
 // 得到KeywordIndices中文档总数
-func (indexer *Indexer) getIndexLength(ti *KeywordIndices) int32 {
-	return cast.ToInt32(len(ti.docIds))
+func (indexer *Indexer) getIndexLength(ti *KeywordIndices) uint32 {
+	return uint32(len(ti.docIds))
 }
 
 // 向 ADDCACHE 中加入一个文档
@@ -97,7 +96,7 @@ func (indexer *Indexer) AddDocuments(documents *types.DocumentsIndex) {
 
 	indexer.tableLock.Lock()
 	defer indexer.tableLock.Unlock()
-	indexPointers := make(map[string]int32, len(indexer.tableLock.table))
+	indexPointers := make(map[string]uint32, len(indexer.tableLock.table))
 
 	// DocId 递增顺序遍历插入文档保证索引移动次数最少
 	for i, document := range *documents {
@@ -117,7 +116,7 @@ func (indexer *Indexer) AddDocuments(documents *types.DocumentsIndex) {
 			if !foundKeyword {
 				// 如果没找到该搜索键则加入
 				ti := KeywordIndices{}
-				ti.docIds = []int32{document.DocId}
+				ti.docIds = []uint32{document.DocId}
 				ti.weight = []float32{document.Keywords[index].Weight}
 				indexer.tableLock.table[keyword.Text] = &ti
 				continue
@@ -141,7 +140,7 @@ func (indexer *Indexer) AddDocuments(documents *types.DocumentsIndex) {
 // 第一个返回参数为找到的位置或需要插入的位置
 // 第二个返回参数标明是否找到
 func (indexer *Indexer) searchIndex(
-	indices *KeywordIndices, start int32, end int32, docId int32) (int32, bool) {
+	indices *KeywordIndices, start uint32, end uint32, docId uint32) (uint32, bool) {
 	// 特殊情况
 	if indexer.getIndexLength(indices) == start {
 		return start, false
@@ -158,7 +157,7 @@ func (indexer *Indexer) searchIndex(
 	}
 
 	// 二分
-	var middle int32
+	var middle uint32
 	for end-start > 1 {
 		middle = (start + end) / 2
 		if docId == indexer.getDocId(indices, middle) {

@@ -1,8 +1,6 @@
 package types
 
 type DocumentIndexData struct {
-	//索引id
-	Id int32
 	//文章识别符
 	PostId int32
 	//标题
@@ -10,14 +8,14 @@ type DocumentIndexData struct {
 	//文档全文（必须是UTF-8格式），用于生成待索引的关键词
 	Content string
 	//创建时间
-	CreatTime int64
+	CreateTime int64
 	//更新时间
 	UpdateTime int64
 }
 
 type DocumentIndex struct {
 	// 文本的DocId
-	DocId int32
+	DocId uint32
 
 	// 文本的关键词长
 	TokenLength float32
