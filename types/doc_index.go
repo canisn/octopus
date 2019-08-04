@@ -27,7 +27,7 @@ type DocumentIndex struct {
 // 文档的一个关键词
 type Keyword struct {
 	//关键词的字符串
-	Text string
+	Word string
 	//权重
 	Weight float32
 }

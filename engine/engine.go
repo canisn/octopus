@@ -41,6 +41,7 @@ func (engine *Engine) Init(options EngineInitOptions) {
 		log.Fatal("请勿重复初始化引擎")
 	}
 	options.Init()
+	fmt.Println(options)
 	engine.initOptions = options
 	engine.initialized = true
 
@@ -54,51 +55,49 @@ func (engine *Engine) Init(options EngineInitOptions) {
 		fmt.Println("SegmenterWorker start")
 	}
 
+	// 初始化索引器
+	var i uint32
+	for i = 0; i < options.NumShards; i++ {
+		engine.indexers = append(engine.indexers, core.Indexer{})
+		engine.indexers[i].Init(*options.IndexerInitOptions)
+	}
 	// 初始化索引器通道
 	engine.indexerAddDocChannels = make(
 		[]chan IndexerAddDocumentRequest, options.NumShards)
 
-	// 初始化索引器
-	for shard := 0; shard < options.NumShards; shard++ {
-		engine.indexers = append(engine.indexers, core.Indexer{})
-		engine.indexers[shard].Init(*options.IndexerInitOptions)
+	for i = 0; i < options.NumShards; i++ {
+		engine.indexerAddDocChannels[i] = make(
+			chan IndexerAddDocumentRequest,
+			options.IndexerBufferLength)
 	}
 
 	// 启动索引器
-	for shard := 0; shard < options.NumShards; shard++ {
-		go engine.indexerAddDocumentWorker(shard)
+	for i = 0; i < options.NumShards; i++ {
+		go engine.indexerAddDocumentWorker(i)
 		fmt.Println("indexerAddDocumentWorker start")
 	}
+	fmt.Println("engine ", engine.initOptions, engine.segmenterChannel, engine.indexerAddDocChannels[0])
 }
 
 // 将文档加入索引
-//
 // 输入参数：
 //  docId	      标识文档编号，必须唯一，docId == 0 表示非法文档（用于强制刷新索引），[1, +oo) 表示合法文档
 //  data	      见DocumentIndexData注释
 //  forceUpdate 是否强制刷新 cache，如果设为 true，则尽快添加到索引，否则等待 cache 满之后一次全量添加
-//
-// 注意：
-//      1. 这个函数是线程安全的，请尽可能并发调用以提高索引速度
-//      2. 这个函数调用是非同步的，也就是说在函数返回时有可能文档还没有加入索引中，因此
-//         如果立刻调用Search可能无法查询到这个文档。强制刷新索引请调用FlushIndex函数。
-func (engine *Engine) IndexDocument(docId uint32, data types.DocumentIndexData, forceUpdate bool) {
-	engine.internalIndexDocument(docId, data, forceUpdate)
-}
 
-func (engine *Engine) internalIndexDocument(docId uint32, data types.DocumentIndexData, forceUpdate bool) {
+func (engine *Engine) IndexDocument(docId uint32, data types.DocumentIndexData, forceUpdate bool) {
 	if !engine.initialized {
 		log.Fatal("必须先初始化引擎")
 	}
-	fmt.Println("internalIndexDocument", docId, data)
 	hash := murmur.Murmur3([]byte(fmt.Sprint("%d %s", docId, data.Content)))
 	engine.segmenterChannel <- SegmenterRequest{
 		DocId: docId, Hash: hash, Data: data, ForceUpdate: forceUpdate}
 }
 
 // 从文本hash得到要分配到的shard
-func (engine *Engine) getShard(hash uint32) int {
-	return int(hash - hash/uint32(engine.initOptions.NumShards)*uint32(engine.initOptions.NumShards))
+func (engine *Engine) getShard(hash uint32) uint32 {
+	return hash % engine.initOptions.NumShards
+	//return int(hash - hash/uint32(engine.initOptions.NumShards)*uint32(engine.initOptions.NumShards))
 }
 
 // 阻塞等待直到所有索引添加完毕

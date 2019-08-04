@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"fmt"
 	"octopus/types"
 	"sync/atomic"
 )
@@ -10,9 +11,10 @@ type IndexerAddDocumentRequest struct {
 	forceUpdate bool
 }
 
-func (engine *Engine) indexerAddDocumentWorker(shard int) {
+func (engine *Engine) indexerAddDocumentWorker(shard uint32) {
 	for {
 		request := <-engine.indexerAddDocChannels[shard]
+		fmt.Println("data to indexerAddDocChannels", request.document)
 		engine.indexers[shard].AddDocumentToCache(request.document, request.forceUpdate)
 		if request.document != nil {
 			atomic.AddUint32(&engine.numTokenIndexAdded,

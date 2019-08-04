@@ -2,18 +2,20 @@ package engine
 
 import (
 	"octopus/core"
-	"octopus/types"
-	"runtime"
 )
 
 var (
 	// EngineInitOptions的默认值
-	defaultNumSegmenterThreads       = runtime.NumCPU()
-	defaultNumShards                 = 2
-	defaultIndexerBufferLength       = runtime.NumCPU()
-	defaultNumIndexerThreadsPerShard = runtime.NumCPU()
-	defaultRankerBufferLength        = runtime.NumCPU()
-	defaultNumRankerThreadsPerShard  = runtime.NumCPU()
+	//NumCPU = runtime.NumCPU()
+	numThread                               = 1
+	defaultNumSegmenterThreads              = numThread
+	defaultNumShards                 uint32 = 1
+	defaultIndexerBufferLength              = numThread
+	defaultNumIndexerThreadsPerShard        = numThread
+	defaultRankerBufferLength               = numThread
+	defaultNumRankerThreadsPerShard         = numThread
+
+	defaultIndexerInitOptions = core.IndexerInitOptions{}
 )
 
 type EngineInitOptions struct {
@@ -21,7 +23,7 @@ type EngineInitOptions struct {
 	NumSegmenterThreads int
 
 	// 索引器和排序器的shard数目
-	NumShards int
+	NumShards uint32
 
 	// 索引器的信道缓冲长度
 	IndexerBufferLength int
@@ -38,9 +40,6 @@ type EngineInitOptions struct {
 	// 索引器初始化选项
 	IndexerInitOptions *core.IndexerInitOptions
 
-	// 默认的搜索选项
-	DefaultRankOptions *types.RankOptions
-
 	// 是否使用持久数据库，以及数据库文件保存的目录和裂分数目
 	UsePersistentStorage    bool
 	PersistentStorageFolder string
@@ -56,6 +55,10 @@ func (options *EngineInitOptions) Init() {
 
 	if options.NumShards == 0 {
 		options.NumShards = defaultNumShards
+	}
+
+	if options.IndexerInitOptions == nil {
+		options.IndexerInitOptions = &defaultIndexerInitOptions
 	}
 
 	if options.IndexerBufferLength == 0 {

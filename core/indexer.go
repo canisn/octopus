@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"log"
 	"octopus/types"
 	"sort"
@@ -35,11 +36,8 @@ type Indexer struct {
 
 // 反向索引表的一行，收集了一个搜索键出现的所有文档，按照DocId从小到大排序。
 type KeywordIndices struct {
-	// 下面的切片是否为空，取决于初始化时IndexType的值
 	docIds []uint32 // 全部类型都有
 	weight []float32
-	//frequencies []float32 // IndexType == FrequenciesIndex
-	//locations   [][]int   // IndexType == LocationsIndex
 }
 
 // 初始化索引器
@@ -76,9 +74,10 @@ func (indexer *Indexer) AddDocumentToCache(document *types.DocumentIndex, forceU
 	if document != nil {
 		indexer.addCacheLock.addCache[indexer.addCacheLock.addCachePointer] = document
 		indexer.addCacheLock.addCachePointer++
+		fmt.Println("indexer.addCacheLock.addCachePointer", indexer.addCacheLock.addCachePointer)
 	}
 	if indexer.addCacheLock.addCachePointer >= indexer.initOptions.DocCacheSize || forceUpdate {
-		indexer.tableLock.Lock()
+		//indexer.tableLock.Lock()
 		addCachedDocuments := indexer.addCacheLock.addCache[0:indexer.addCacheLock.addCachePointer]
 		indexer.addCacheLock.Unlock()
 		sort.Sort(addCachedDocuments)
@@ -93,7 +92,6 @@ func (indexer *Indexer) AddDocuments(documents *types.DocumentsIndex) {
 	if indexer.initialized == false {
 		log.Fatal("索引器尚未初始化")
 	}
-
 	indexer.tableLock.Lock()
 	defer indexer.tableLock.Unlock()
 	indexPointers := make(map[string]uint32, len(indexer.tableLock.table))
@@ -112,23 +110,23 @@ func (indexer *Indexer) AddDocuments(documents *types.DocumentsIndex) {
 		}
 
 		for index, keyword := range document.Keywords {
-			indices, foundKeyword := indexer.tableLock.table[keyword.Text]
+			indices, foundKeyword := indexer.tableLock.table[keyword.Word]
 			if !foundKeyword {
 				// 如果没找到该搜索键则加入
+				fmt.Printf("id:%d, keyword:%s, weight:%f\n", document.DocId, keyword.Word, document.Keywords[index].Weight)
 				ti := KeywordIndices{}
 				ti.docIds = []uint32{document.DocId}
 				ti.weight = []float32{document.Keywords[index].Weight}
-				indexer.tableLock.table[keyword.Text] = &ti
-				continue
+				indexer.tableLock.table[keyword.Word] = &ti
+			} else {
+				// 已有索引键
+				position, _ := indexer.searchIndex(
+					indices, indexPointers[keyword.Word], indexer.getIndexLength(indices)-1, document.DocId)
+				indexPointers[keyword.Word] = position
+				indices.docIds = append(indices.docIds, 0)
+				copy(indices.docIds[position+1:], indices.docIds[position:])
+				indices.docIds[position] = document.DocId
 			}
-
-			// 查找应该插入的位置，且索引一定不存在
-			position, _ := indexer.searchIndex(
-				indices, indexPointers[keyword.Text], indexer.getIndexLength(indices)-1, document.DocId)
-			indexPointers[keyword.Text] = position
-			indices.docIds = append(indices.docIds, 0)
-			copy(indices.docIds[position+1:], indices.docIds[position:])
-			indices.docIds[position] = document.DocId
 		}
 
 		// 更新文章状态和总数
