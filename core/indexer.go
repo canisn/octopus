@@ -76,12 +76,13 @@ func (indexer *Indexer) AddDocumentToCache(document *types.DocumentIndex, forceU
 		indexer.addCacheLock.addCachePointer++
 		fmt.Println("indexer.addCacheLock.addCachePointer", indexer.addCacheLock.addCachePointer)
 	}
-	if indexer.addCacheLock.addCachePointer >= indexer.initOptions.DocCacheSize || forceUpdate {
+	if indexer.addCacheLock.addCachePointer >= indexer.initOptions.DocCacheSize {
 		//indexer.tableLock.Lock()
 		addCachedDocuments := indexer.addCacheLock.addCache[0:indexer.addCacheLock.addCachePointer]
 		indexer.addCacheLock.Unlock()
 		sort.Sort(addCachedDocuments)
 		indexer.AddDocuments(&addCachedDocuments)
+		indexer.addCacheLock.addCachePointer = 0
 	} else {
 		indexer.addCacheLock.Unlock()
 	}
@@ -113,7 +114,7 @@ func (indexer *Indexer) AddDocuments(documents *types.DocumentsIndex) {
 			indices, foundKeyword := indexer.tableLock.table[keyword.Word]
 			if !foundKeyword {
 				// 如果没找到该搜索键则加入
-				fmt.Printf("id:%d, keyword:%s, weight:%f\n", document.DocId, keyword.Word, document.Keywords[index].Weight)
+				//fmt.Printf("id:%d, keyword:%s, weight:%f\n", document.DocId, keyword.Word, document.Keywords[index].Weight)
 				ti := KeywordIndices{}
 				ti.docIds = []uint32{document.DocId}
 				ti.weight = []float32{document.Keywords[index].Weight}

@@ -1,7 +1,9 @@
 package engine
 
 import (
+	"database/sql"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/huichen/murmur"
 	"log"
 	"octopus/core"
@@ -92,6 +94,53 @@ func (engine *Engine) IndexDocument(docId uint32, data types.DocumentIndexData, 
 	hash := murmur.Murmur3([]byte(fmt.Sprint("%d %s", docId, data.Content)))
 	engine.segmenterChannel <- SegmenterRequest{
 		DocId: docId, Hash: hash, Data: data, ForceUpdate: forceUpdate}
+}
+
+//从mysql获取文档加入索引
+func (engine *Engine) IndexBulkDocumentFromMysql(mysql_ip string, mysql_port string, mysql_user string, mysql_passwd string, mysql_qyDB string, table string) {
+	//打开数据库
+	//fmt.Print(user+":"+password+"@tcp("+host+")/"+dbName+"?charset=utf8")
+	db, errOpen := sql.Open("mysql", mysql_user+":"+mysql_passwd+"@tcp("+mysql_ip+":"+mysql_port+")/"+mysql_qyDB+"?charset=utf8")
+	if errOpen != nil {
+		//TODO，这里只是打印了一下，并没有做异常处理
+		fmt.Println("funReadSql Open is error", errOpen)
+	}
+
+	start := 0
+	for {
+		//读取t_knowledge_tree表中codeName和answer字段
+		rows, err := db.Query("select id,pid,title,content,created,updated from zhihudata order by id limit ?,10000 ", start)
+		if err != nil {
+			fmt.Println("error:", err)
+		}
+		flag := false
+		for rows.Next() {
+			var id uint32
+			var pid uint32
+			var title string
+			var content string
+			var createtime uint32
+			var updatetime uint32
+			err = rows.Scan(&id, &pid, &title, &content, &createtime, &updatetime)
+			data := types.DocumentIndexData{PostId: pid, Title: title, Content: content,
+				CreateTime: createtime, UpdateTime: updatetime}
+			hash := murmur.Murmur3([]byte(fmt.Sprint("%d %s", id, data.Content)))
+			engine.segmenterChannel <- SegmenterRequest{
+				DocId: id, Hash: hash, Data: data, ForceUpdate: false}
+			flag = true
+		}
+		if !flag {
+			break
+		}
+		start += 10000
+		if err != nil {
+			//TODO，这里只是打印了一下，并没有做异常处理
+			fmt.Println("funReadSql SELECT t_knowledge_tree is error", err)
+		}
+	}
+	//关闭数据库
+	db.Close()
+
 }
 
 // 从文本hash得到要分配到的shard

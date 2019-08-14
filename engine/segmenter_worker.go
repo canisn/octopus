@@ -35,7 +35,7 @@ func (engine *Engine) SegmenterWorker() {
 			Normal := segments[0].Weight
 			for _, segment := range segments {
 				token := segment.Word
-				tokensMap[token] = float32(segment.Weight/Normal)
+				tokensMap[token] = float32(segment.Weight / Normal)
 			}
 			numTokens = len(segments)
 		} else {
@@ -52,14 +52,13 @@ func (engine *Engine) SegmenterWorker() {
 		iTokens := 0
 		for k, v := range tokensMap {
 			indexerRequest.document.Keywords[iTokens] = types.Keyword{
-				Word: k,
-				Weight:v}
+				Word:   k,
+				Weight: v}
 			iTokens++
 		}
 		fmt.Println("segmenter result:", indexerRequest, shard, engine.indexerAddDocChannels[shard])
 
 		engine.indexerAddDocChannels[shard] <- indexerRequest
-		fmt.Println("5")
 
 		//if request.ForceUpdate {
 		//	var i uint32
