@@ -5,6 +5,7 @@ import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/huichen/murmur"
+	"github.com/yanyiwu/gojieba"
 	"log"
 	"octopus/core"
 	"octopus/storage"
@@ -238,6 +239,25 @@ func (engine *Engine) IndexBulkDocumentFromMysql(mysql_ip string, mysql_port str
 func (engine *Engine) getShard(hash uint32) uint32 {
 	return hash % engine.initOptions.NumShards
 	//return int(hash - hash/uint32(engine.initOptions.NumShards)*uint32(engine.initOptions.NumShards))
+}
+
+// 查找满足搜索条件的文档，此函数线程安全
+func (engine *Engine) Search(request types.SearchRequest) (docs core.PairList) {
+	if !engine.initialized {
+		log.Fatal("必须先初始化引擎")
+	}
+	//提取检索词
+	words := gojieba.NewJieba().CutForSearch(request.Text, true)
+	if len(words) != 0 {
+		//搜索对应关键词
+		docs = engine.indexers[0].Lookup(words)
+		return
+	} else {
+		fmt.Println("请输入有效检索词！")
+	}
+
+	//排序
+	return
 }
 
 // 阻塞等待直到所有索引添加完毕

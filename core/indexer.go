@@ -127,12 +127,74 @@ func (indexer *Indexer) AddDocuments(documents *types.DocumentsIndex) {
 				indices.docIds = append(indices.docIds, 0)
 				copy(indices.docIds[position+1:], indices.docIds[position:])
 				indices.docIds[position] = document.DocId
+
+				indices.weight = append(indices.weight, 0)
+				copy(indices.weight[position+1:], indices.weight[position:])
+				indices.weight[position] = document.Keywords[index].Weight
 			}
 		}
 
 		// 更新文章状态和总数
 		indexer.numDocuments++
 	}
+	fmt.Println("numDocuments", indexer.numDocuments)
+}
+
+// 查找包含全部搜索键(AND操作)的文档
+// 当docIds不为nil时仅从docIds指定的文档中查找
+func (indexer *Indexer) Lookup(words []string) (docs PairList) {
+	if indexer.initialized == false {
+		log.Fatal("索引器尚未初始化")
+	}
+
+	if indexer.numDocuments == 0 {
+		return
+	}
+
+	indexer.tableLock.RLock()
+	defer indexer.tableLock.RUnlock()
+	//table := make([]*KeywordIndices, len(keywords))
+	table := make(map[uint32]float32)
+	for _, word := range words {
+		indices, found := indexer.tableLock.table[word]
+		if !found {
+			// 当反向索引表中无此搜索键时直接返回
+			return
+		} else {
+			// 否则加入反向表中
+			for index, docId := range indices.docIds {
+				value, ok := table[docId]
+				if ok {
+					table[docId] = value + indices.weight[index]
+				} else {
+					table[docId] = indices.weight[index]
+				}
+			}
+
+		}
+	}
+	docs = sortMapByValue(table)
+	return
+}
+
+type Pair struct {
+	Key   uint32
+	Value float32
+}
+type PairList []Pair
+
+func (p PairList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p PairList) Len() int           { return len(p) }
+func (p PairList) Less(i, j int) bool { return p[i].Value < p[j].Value }
+func sortMapByValue(m map[uint32]float32) PairList {
+	p := make(PairList, len(m))
+	i := 0
+	for k, v := range m {
+		p[i] = Pair{k, v}
+		i += 1
+	}
+	sort.Sort(p)
+	return p
 }
 
 // 二分法查找indices中某文档的索引项

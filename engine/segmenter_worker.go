@@ -56,7 +56,6 @@ func (engine *Engine) SegmenterWorker() {
 				Weight: v}
 			iTokens++
 		}
-		fmt.Println("segmenter result:", indexerRequest, shard, engine.indexerAddDocChannels[shard])
 
 		engine.indexerAddDocChannels[shard] <- indexerRequest
 
