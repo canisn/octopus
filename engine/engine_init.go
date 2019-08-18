@@ -14,8 +14,8 @@ var (
 	defaultNumIndexerThreadsPerShard        = numThread
 	defaultRankerBufferLength               = numThread
 	defaultNumRankerThreadsPerShard         = numThread
-
-	defaultIndexerInitOptions = core.IndexerInitOptions{}
+	defaultPersistentStorageShards          = 1
+	defaultIndexerInitOptions               = core.IndexerInitOptions{}
 )
 
 type EngineInitOptions struct {
@@ -43,7 +43,7 @@ type EngineInitOptions struct {
 	// 是否使用持久数据库，以及数据库文件保存的目录和裂分数目
 	UsePersistentStorage    bool
 	PersistentStorageFolder string
-	PersistentStorageShards uint32
+	PersistentStorageShards int
 }
 
 // 初始化EngineInitOptions，当用户未设定某个选项的值时用默认值取代
@@ -77,4 +77,7 @@ func (options *EngineInitOptions) Init() {
 		options.NumRankerThreadsPerShard = defaultNumRankerThreadsPerShard
 	}
 
+	if options.PersistentStorageShards == 0 {
+		options.PersistentStorageShards = defaultPersistentStorageShards
+	}
 }
