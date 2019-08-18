@@ -55,7 +55,6 @@ func (engine *Engine) Init(options EngineInitOptions) {
 		log.Fatal("请勿重复初始化引擎")
 	}
 	options.Init()
-	fmt.Println(options)
 	engine.initOptions = options
 	engine.initialized = true
 	// 初始化持久化存储通道
@@ -77,8 +76,8 @@ func (engine *Engine) Init(options EngineInitOptions) {
 	// 启动分词器
 	for iThread := 0; iThread < options.NumSegmenterThreads; iThread++ {
 		go engine.SegmenterWorker()
-		fmt.Println("SegmenterWorker start")
 	}
+	fmt.Println("SegmenterWorker start")
 
 	// 初始化索引器
 	var i uint32
@@ -99,9 +98,8 @@ func (engine *Engine) Init(options EngineInitOptions) {
 	// 启动索引器
 	for i = 0; i < options.NumShards; i++ {
 		go engine.indexerAddDocumentWorker(i)
-		fmt.Println("indexerAddDocumentWorker start")
 	}
-	fmt.Println("engine ", engine.initOptions, engine.segmenterChannel, engine.indexerAddDocChannels[0])
+	fmt.Println("indexerAddDocumentWorker start")
 
 	// 启动持久化存储工作协程
 	if engine.initOptions.UsePersistentStorage {

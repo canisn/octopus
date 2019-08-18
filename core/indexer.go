@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"log"
 	"octopus/types"
 	"sort"
@@ -74,7 +73,6 @@ func (indexer *Indexer) AddDocumentToCache(document *types.DocumentIndex, forceU
 	if document != nil {
 		indexer.addCacheLock.addCache[indexer.addCacheLock.addCachePointer] = document
 		indexer.addCacheLock.addCachePointer++
-		fmt.Println("indexer.addCacheLock.addCachePointer", indexer.addCacheLock.addCachePointer)
 	}
 	if indexer.addCacheLock.addCachePointer >= indexer.initOptions.DocCacheSize || forceUpdate {
 		//indexer.tableLock.Lock()
@@ -137,7 +135,6 @@ func (indexer *Indexer) AddDocuments(documents *types.DocumentsIndex) {
 		// 更新文章状态和总数
 		indexer.numDocuments++
 	}
-	fmt.Println("numDocuments", indexer.numDocuments)
 }
 
 // 查找包含全部搜索键(AND操作)的文档

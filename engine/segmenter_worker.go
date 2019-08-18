@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"fmt"
 	"github.com/yanyiwu/gojieba"
 	"octopus/types"
 )
@@ -39,7 +38,7 @@ func (engine *Engine) SegmenterWorker() {
 			}
 			numTokens = len(segments)
 		} else {
-			fmt.Println("content should not be empty!")
+
 		}
 		indexerRequest := IndexerAddDocumentRequest{
 			document: &types.DocumentIndex{
