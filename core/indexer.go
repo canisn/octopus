@@ -76,7 +76,7 @@ func (indexer *Indexer) AddDocumentToCache(document *types.DocumentIndex, forceU
 		indexer.addCacheLock.addCachePointer++
 		fmt.Println("indexer.addCacheLock.addCachePointer", indexer.addCacheLock.addCachePointer)
 	}
-	if indexer.addCacheLock.addCachePointer >= indexer.initOptions.DocCacheSize {
+	if indexer.addCacheLock.addCachePointer >= indexer.initOptions.DocCacheSize || forceUpdate {
 		//indexer.tableLock.Lock()
 		addCachedDocuments := indexer.addCacheLock.addCache[0:indexer.addCacheLock.addCachePointer]
 		indexer.addCacheLock.Unlock()
