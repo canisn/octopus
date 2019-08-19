@@ -199,7 +199,7 @@ func (engine *Engine) IndexBulkDocumentFromMysql(mysql_ip string, mysql_port str
 	start := 0
 	for {
 		//读取t_knowledge_tree表中codeName和answer字段
-		rows, err := db.Query("select id,pid,title,content,created,updated from zhihudata order by id limit ?,10 ", start)
+		rows, err := db.Query("select id,pid,title,content,created,updated from zhihudata order by id limit ?,100 ", start)
 		if err != nil {
 			fmt.Println("error:", err)
 		}
@@ -218,11 +218,14 @@ func (engine *Engine) IndexBulkDocumentFromMysql(mysql_ip string, mysql_port str
 			engine.segmenterChannel <- SegmenterRequest{
 				DocId: id, Hash: hash, Data: data, ForceUpdate: false}
 			flag = true
+			start +=1
+			if start%100==0 {
+				fmt.Print("temp",start)
+			}
 		}
 		if !flag {
 			break
 		}
-		start += 10000
 		if err != nil {
 			//TODO，这里只是打印了一下，并没有做异常处理
 			fmt.Println("funReadSql SELECT t_knowledge_tree is error", err)
@@ -277,11 +280,6 @@ func (engine *Engine) FlushIndex() {
 			return
 		}
 	}
-}
-
-func (engine *Engine) Print() {
-	fmt.Print(engine.numDocumentsIndexed)
-	fmt.Print(">.......")
 }
 
 // 关闭引擎
