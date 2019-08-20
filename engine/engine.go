@@ -263,23 +263,7 @@ func (engine *Engine) Search(request types.SearchRequest) (docs core.PairList) {
 
 // 阻塞等待直到所有索引添加完毕
 func (engine *Engine) FlushIndex() {
-	for {
-		runtime.Gosched()
-		if engine.numIndexingRequests == engine.numDocumentsIndexed &&
-			engine.numRemovingRequests*uint32(engine.initOptions.NumShards) == engine.numDocumentsRemoved &&
-			(!engine.initOptions.UsePersistentStorage || engine.numIndexingRequests == engine.numDocumentsStored) {
-			// 保证 CHANNEL 中 REQUESTS 全部被执行完
-			break
-		}
-	}
-	// 强制更新，保证其为最后的请求
 	engine.IndexDocument(0, types.DocumentIndexData{}, true)
-	for {
-		runtime.Gosched()
-		if engine.numForceUpdatingRequests*uint32(engine.initOptions.NumShards) == engine.numDocumentsForceUpdated {
-			return
-		}
-	}
 }
 
 // 关闭引擎

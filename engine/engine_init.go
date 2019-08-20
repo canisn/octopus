@@ -2,12 +2,13 @@ package engine
 
 import (
 	"octopus/core"
+	"runtime"
 )
 
 var (
 	// EngineInitOptions的默认值
-	//NumCPU = runtime.NumCPU()
-	numThread                               = 1
+	NumCPU = runtime.NumCPU()
+	numThread                               = NumCPU
 	defaultNumSegmenterThreads              = numThread
 	defaultNumShards                 uint32 = 1
 	defaultIndexerBufferLength              = numThread

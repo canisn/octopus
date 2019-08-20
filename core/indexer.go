@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"log"
 	"octopus/types"
 	"sort"
@@ -75,12 +76,11 @@ func (indexer *Indexer) AddDocumentToCache(document *types.DocumentIndex, forceU
 		indexer.addCacheLock.addCachePointer++
 	}
 	if indexer.addCacheLock.addCachePointer >= indexer.initOptions.DocCacheSize || forceUpdate {
-		//indexer.tableLock.Lock()
 		addCachedDocuments := indexer.addCacheLock.addCache[0:indexer.addCacheLock.addCachePointer]
+		indexer.addCacheLock.addCachePointer = 0
 		indexer.addCacheLock.Unlock()
 		sort.Sort(addCachedDocuments)
 		indexer.AddDocuments(&addCachedDocuments)
-		indexer.addCacheLock.addCachePointer = 0
 	} else {
 		indexer.addCacheLock.Unlock()
 	}
@@ -99,6 +99,7 @@ func (indexer *Indexer) AddDocuments(documents *types.DocumentsIndex) {
 	for i, document := range *documents {
 		if i < len(*documents)-1 && (*documents)[i].DocId == (*documents)[i+1].DocId {
 			// 如果有重复文档加入，因为稳定排序，只加入最后一个
+			fmt.Println("重复文档:", i)
 			continue
 		}
 
@@ -131,10 +132,10 @@ func (indexer *Indexer) AddDocuments(documents *types.DocumentsIndex) {
 				indices.weight[position] = document.Keywords[index].Weight
 			}
 		}
-
 		// 更新文章状态和总数
 		indexer.numDocuments++
 	}
+	fmt.Println("indexer.numDocuments", indexer.numDocuments)
 }
 
 // 查找包含全部搜索键(AND操作)的文档

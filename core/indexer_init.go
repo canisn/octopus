@@ -4,7 +4,7 @@ package core
 const (
 
 	// 默认插入索引表文档 CACHE SIZE
-	defaultDocCacheSize = 10
+	defaultDocCacheSize = 100
 )
 
 // 初始化索引器选项
